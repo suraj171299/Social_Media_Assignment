@@ -40,9 +40,18 @@ export const signIn = async (req, res, next) => {
 
 const getToken = async(user, statusCode, res) => { 
     const token = await user.getJwtToken();
-    res.status(statusCode).json({
+    res.status(statusCode)
+    .cookie('signin', token, { maxAge: 60 * 60 * 1000, httpOnly: true })
+    .json({
         success: true,
         id: user._id,
         role: user.role
+    })
+}
+
+export const logOut = async (req, res, next) => {
+    res.clearCookie('signin').status(200).json({
+        success: true,
+        message: "You have been logged out"
     })
 }

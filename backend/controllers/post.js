@@ -48,3 +48,18 @@ export const showPostById = async (req, res, next) => {
         next(error);
     }
 }
+
+export const deletePost = async (req, res, next) => {
+
+    const { id } = req.params;
+    
+    try{
+        const post = await Post.findByIdandRemove(id);
+        res.status(200).json({
+            success: true,
+            message: "post deleted"       
+     });
+    }catch(error){
+        next(error);
+    }
+}

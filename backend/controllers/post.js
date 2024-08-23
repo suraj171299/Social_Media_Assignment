@@ -63,3 +63,26 @@ export const deletePost = async (req, res, next) => {
         next(error);
     }
 }
+
+
+export const updatePost = async (req, res, next) => {
+
+    try{
+        const { title, content } = req.body;
+        const { id } = req.params;
+        const currentPost = await Post.findById(id);
+
+        const data = {
+            title: title || currentPost.title,
+            content: content || currentPost.content
+        }
+
+        const postUpdate = await Post.findByIdAndUpdate(id, data, {new: true});
+        res.status(200).json({
+        success: true,
+        postUpdate
+        });
+    }catch(error){
+        next(error);
+    }
+}

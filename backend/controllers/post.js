@@ -86,3 +86,25 @@ export const updatePost = async (req, res, next) => {
         next(error);
     }
 }
+
+export const addComments = async (req, res, next) => {
+    const { comment } = req.body;
+    try{
+        const addComment = await Post.findByIdAndUpdate(req.params.id, {
+            $push: {
+                comments: {
+                    text:comment,
+                    author: req.user._id
+                }
+            }
+        }, {new: true});
+        
+        const post = await Post.findById(comment._id).populate('comments.author', 'name');
+        res.status(200).json({
+            success: true,
+            post
+        });
+    }catch(error){
+        next(error);
+    }
+}

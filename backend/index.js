@@ -6,6 +6,7 @@ import morgan from "morgan";
 import cors from "cors";
 import mongoose from "mongoose";
 import authRoutes from "./routes/authRoutes.js";
+import postRoutes from "./routes/postRoutes.js";
 import errorHandler from "./middleware/error.js";
 dotenv.config();
 const app = express();
@@ -24,8 +25,8 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 
-app.use("/application", authRoutes)
-
+app.use("/app", authRoutes)
+app.use("/app", postRoutes)
 
 app.use(errorHandler);
 

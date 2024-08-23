@@ -33,3 +33,18 @@ export const showAllPosts = async (req, res, next) => {
         next(error);
     }
 }
+
+
+export const showPostById = async (req, res, next) => {
+
+    const { id } = req.params;
+    try{
+        const post = await Post.findById(id).populate('comments.author', 'name');
+        res.status(200).json({
+            success: true,
+            post        
+     });
+    }catch(error){
+        next(error);
+    }
+}

@@ -16,8 +16,20 @@ export const createPost = async (req, res, next) => {
             post
         });
     }catch(error){
-        next(new ErrorResponse(error.message, 400));
+        next(error);
     }
 }
 
 
+export const showAllPosts = async (req, res, next) => {
+
+    try{
+        const posts = await Post.find().sort({createdAt: -1}).populate('author', 'name');
+        res.status(200).json({
+            success: true,
+            posts
+        });
+    }catch(error){
+        next(error);
+    }
+}

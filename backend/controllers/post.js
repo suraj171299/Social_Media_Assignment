@@ -1,110 +1,218 @@
-import Post from '../models/post.js';
-import ErrorResponse from '../utils/errorResponse.js';
+import Post from "../models/post.js";
+import User from "../models/user.js";
+import Comment from "../models/comment.js";
+import ErrorResponse from "../utils/errorResponse.js";
 
 export const createPost = async (req, res, next) => {
-
-    const { title, content, author, comments, createdAt} = req.body;
-
-    try{
+    try {
+        const { content } = req.body;
+        const authorId = req.id;
+        if (!content) {
+            res.status(401).json({
+                message: "Content cannot be empty",
+                success: false,
+            });
+        }
         const post = await Post.create({
-            title,
             content,
-            author: req.user._id,
+            author: authorId,
         });
+        const user = await User.findById(authorId);
+
+        if (user) {
+            user.posts.push(post._id);
+            await user.save();
+        }
+
+        await post.populate({ path: "author", select: "-password" });
+
         res.status(201).json({
+            message: "New post created",
+            post,
             success: true,
-            post
         });
-    }catch(error){
+    } catch (error) {
         next(error);
     }
-}
-
+};
 
 export const showAllPosts = async (req, res, next) => {
-
-    try{
-        const posts = await Post.find().sort({createdAt: -1}).populate('author', 'name');
+    try {
+        const posts = await Post.find()
+            .sort({ createdAt: -1 })
+            .populate({ path: "author", select: "username" })
+            .populate({
+                path: "comments",
+                sort: { createdAt: -1 },
+                populate: {
+                    path: "author",
+                    select: "username",
+                },
+            });
         res.status(200).json({
+            posts,
             success: true,
-            posts
         });
-    }catch(error){
+    } catch (error) {
         next(error);
     }
+};
+
+export const userPosts = async (req, res, next) => {
+    try {
+        const authorId = req.id;
+        const posts = await Post.find({ author: authorId })
+            .sort({ createdAt: -1 })
+            .populate({
+                path: "author",
+                select: "username",
+            })
+            .populate({
+                path: "comments",
+                sort: { createdAt: -1 },
+                populate: {
+                    path: "author",
+                    select: "username",
+                },
+            });
+        res.status(200).json({
+            posts,
+            success: true,
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const likePost = async (req, res, next) => {
+    try {
+        const likedUserId = req.id;
+        const postId = req.params.id;
+
+        const post = await Post.findById(postId);
+
+        if (!post) {
+            return res.status(404).json({
+                message: "Post not found",
+                success: false,
+            });
+        }
+
+        await post.updateOne({ $addToSet: { likes: likedUserId } });
+        await post.save();
+
+        return res.status(201).json({
+            message: "Post liked",
+            success: false
+        })
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const addComment = async (req, res) => {
+    try {
+        const postId = req.params.id;
+        const commentedUserId = req.id;
+
+        const { text } = req.body;
+
+        const post = await Post.findById(postId);
+
+        if (!text) return res.json(400).json({ message: "Comment cannot be empty", success: false })
+
+        const comment = await Comment.create({
+            text,
+            author: commentedUserId,
+            post: postId
+        }).populate({
+            path: 'author',
+            select: 'username'
+        })
+
+        post.comments.pus(comment._id)
+        await post.save();
+
+        return res.status(201).json({
+            message: "Comment added",
+            success: true
+        })
+
+    } catch (error) {
+
+    }
+
 }
 
+export const commentPerPost = async (req, res) => {
+    try {
+        const postId = req.params.id
 
-export const showPostById = async (req, res, next) => {
+        const comments = await Comment.find({ post: postId }).populate('author', 'username')
 
-    const { id } = req.params;
-    try{
-        const post = await Post.findById(id).populate('comments.author', 'name');
-        res.status(200).json({
-            success: true,
-            post        
-     });
-    }catch(error){
-        next(error);
+        if (!comments) return res.status(404).json({ message: "No comments found", success: false })
+
+        return res.status(200).json({ success: true, comments })
+
+    } catch (error) {
+        console.log(error);
     }
 }
 
 export const deletePost = async (req, res, next) => {
 
-    const { id } = req.params;
-    
-    try{
-        const post = await Post.findByIdandRemove(id);
+    try {
+
+        const postId = req.params.id;
+        const authorId = req.id;
+
+        const post = await Post.findById(postId);
+
+        if (post.author.toString() != authorId) return res.status(403).json({ message: "Unauthorized", })
+
+        await Post.findByIdAndDelete(postId)
+
+        let user = await User.findById(authorId);
+
+        user.posts = user.posts.filter(id => id.toString() != postId);
+        await user.save();
+
+        await Comment.deleteMany({ post: postId });
+
         res.status(200).json({
+            message: "Post deleted",
             success: true,
-            message: "post deleted"       
-     });
-    }catch(error){
-        next(error);
-    }
-}
-
-
-export const updatePost = async (req, res, next) => {
-
-    try{
-        const { title, content } = req.body;
-        const { id } = req.params;
-        const currentPost = await Post.findById(id);
-
-        const data = {
-            title: title || currentPost.title,
-            content: content || currentPost.content
-        }
-
-        const postUpdate = await Post.findByIdAndUpdate(id, data, {new: true});
-        res.status(200).json({
-        success: true,
-        postUpdate
         });
-    }catch(error){
+    } catch (error) {
         next(error);
     }
-}
+};
 
 export const addComments = async (req, res, next) => {
     const { comment } = req.body;
-    try{
-        const addComment = await Post.findByIdAndUpdate(req.params.id, {
-            $push: {
-                comments: {
-                    text:comment,
-                    author: req.user._id
-                }
-            }
-        }, {new: true});
-        
-        const post = await Post.findById(comment._id).populate('comments.author', 'name');
+    try {
+        const addComment = await Post.findByIdAndUpdate(
+            req.params.id,
+            {
+                $push: {
+                    comments: {
+                        text: comment,
+                        author: req.user._id,
+                    },
+                },
+            },
+            { new: true }
+        );
+
+        const post = await Post.findById(comment._id).populate(
+            "comments.author",
+            "name"
+        );
         res.status(200).json({
             success: true,
-            post
+            post,
         });
-    }catch(error){
+    } catch (error) {
         next(error);
     }
-}
+};

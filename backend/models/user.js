@@ -22,10 +22,10 @@ const userSchema = new mongoose.Schema({
         trim: true,
         required: [true, 'password is required'],
     },
-    posts:{
+    posts:[{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Post'
-    }
+    }]
 }, {timestamps: true});
 
 

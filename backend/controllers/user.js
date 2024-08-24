@@ -1,6 +1,7 @@
 import User from "../models/user.js";
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import Post from "../models/post.js";
 
 export const signup = async (req, res) => {
     try {
@@ -43,8 +44,8 @@ export const login = async (req, res) => {
             })
         }
 
-        let user = await User.findOne({email})
-        if(!user){
+        let user = await User.findOne({ email })
+        if (!user) {
             return res.status(401).json({
                 message: "Incorrect email or password",
                 success: false,
@@ -53,41 +54,51 @@ export const login = async (req, res) => {
 
         const isPassword = await bcrypt.compare(password, user.password)
 
-        if(!isPassword){
+        if (!isPassword) {
             return res.status(401).json({
                 message: "Incorrect email or password",
                 success: false,
             })
         }
 
-        user={
-            id: user._id,
+        const loginToken = jwt.sign({ userId: user._id }, process.env.SECRET_KEY, { expiresIn: 3600 })
+
+        const populatedPost = await Promise.all(
+            user.posts.map(async (postId) => {
+                const post = await Post.findById(postId);
+                if (post.author.equals(user._id)) {
+                    return post
+                }
+                return null;
+            })
+        )
+
+        user = {
+            _id: user._id,
             username: user.username,
             email: user.email,
-            posts: user.posts
+            posts: populatedPost
         }
 
-        const loginToken = jwt.sign({userId:user._id}, process.env.SECRET_KEY,{expiresIn: 3600})
-
-        return res.cookie('token', loginToken, {httpOnly: true}).json({
+        return res.cookie('token', loginToken, { httpOnly: true }).json({
             message: `${user.username} login successful`,
             success: true,
             user
         })
-    } catch(error) {
+    } catch (error) {
         console.log(error);
-        
+
     }
 }
 
 export const logout = async (req, res) => {
     try {
-        return res.cookie("token", {maxAge:0}).json({
+        return res.cookie("token", { maxAge: 0 }).json({
             message: "Logged Out",
             success: true
         })
     } catch (error) {
         console.log(error);
-        
+
     }
 }

@@ -3,6 +3,8 @@ import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { setAuthUser } from "@/redux/auth";
 
 
 const LogIn = () => {
@@ -14,6 +16,7 @@ const LogIn = () => {
 
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const EventHandler = (event) => {
     setInput({ ...input, [event.target.name]: event.target.value });
   };
@@ -35,6 +38,7 @@ const LogIn = () => {
         }
       );
       if (login.data.success) {
+        dispatch(setAuthUser(login.data.user))
         navigate("/");
         console.log("Login success");
         setInput({

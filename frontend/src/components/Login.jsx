@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import axios from "axios";
+import { Link, useNavigate } from "react-router-dom";
+
 
 const LogIn = () => {
   const [input, setInput] = useState({
@@ -11,6 +13,7 @@ const LogIn = () => {
   });
 
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
   const EventHandler = (event) => {
     setInput({ ...input, [event.target.name]: event.target.value });
   };
@@ -32,6 +35,7 @@ const LogIn = () => {
         }
       );
       if (login.data.success) {
+        navigate("/");
         console.log("Login success");
         setInput({
           email: "",
@@ -75,6 +79,12 @@ const LogIn = () => {
           />
         </div>
         <Button type="Submit">LogIn</Button>
+        <span className="text-center">
+          Don't have an account?{" "}
+          <Link to="/signup" className="text-blue-600">
+            Signup
+          </Link>
+        </span>
       </form>
     </div>
   );

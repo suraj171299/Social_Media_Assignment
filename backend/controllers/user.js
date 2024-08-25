@@ -61,7 +61,7 @@ export const login = async (req, res) => {
             })
         }
 
-        const loginToken = jwt.sign({ userId: user._id }, process.env.SECRET_KEY, { expiresIn: 3600 })
+        const loginToken = await jwt.sign({ userId: user._id }, process.env.SECRET_KEY, { expiresIn: "1d" })
 
         const populatedPost = await Promise.all(
             user.posts.map(async (postId) => {
@@ -80,7 +80,7 @@ export const login = async (req, res) => {
             posts: populatedPost
         }
 
-        return res.cookie('token', loginToken, { httpOnly: true }).json({
+        return res.cookie('token', loginToken, { httpOnly: true,sameSite: 'strict', maxAge: 1 * 24 * 60 * 60 * 1000 }).json({
             message: `${user.username} login successful`,
             success: true,
             user

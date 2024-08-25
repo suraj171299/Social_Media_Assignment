@@ -1,9 +1,9 @@
 import mongoose from 'mongoose';
 
 const postSchema = new mongoose.Schema({
-    content:{
+    caption:{
         type: String,
-        required: [true, 'Content is required'],
+        default: ""
     },
     author:{
         type: mongoose.Schema.Types.ObjectId,

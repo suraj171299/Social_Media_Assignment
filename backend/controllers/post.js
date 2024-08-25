@@ -5,16 +5,16 @@ import ErrorResponse from "../utils/errorResponse.js";
 
 export const createPost = async (req, res, next) => {
     try {
-        const { content } = req.body;
+        const { caption } = req.body;
         const authorId = req.id;
-        if (!content) {
+        if (!caption) {
             res.status(401).json({
-                message: "Content cannot be empty",
+                message: "Caption cannot be empty",
                 success: false,
             });
         }
         const post = await Post.create({
-            content,
+            caption,
             author: authorId,
         });
         const user = await User.findById(authorId);
@@ -103,7 +103,33 @@ export const likePost = async (req, res, next) => {
 
         return res.status(201).json({
             message: "Post liked",
-            success: false
+            success: true
+        })
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const dislikePost = async (req, res, next) => {
+    try {
+        const likedUserId = req.id;
+        const postId = req.params.id;
+
+        const post = await Post.findById(postId);
+
+        if (!post) {
+            return res.status(404).json({
+                message: "Post not found",
+                success: false,
+            });
+        }
+
+        await post.updateOne({ $pull: { likes: likedUserId } });
+        await post.save();
+
+        return res.status(201).json({
+            message: "Post disliked",
+            success: true
         })
     } catch (error) {
         next(error);

@@ -7,8 +7,9 @@ import userRoutes from "./routes/userRoutes.js"
 import postRoutes from "./routes/postRoutes.js";
 import errorHandler from "./middleware/error.js";
 import connectDB from "./utils/db.js";
+import { app, server, io } from "./socket/socket.js";
 dotenv.config({});
-const app = express();
+
 
 app.use(express.json())
 app.use(cookieParser());
@@ -28,7 +29,7 @@ app.use(errorHandler);
 
 const port = process.env.PORT || 5000;
 
-app.listen(port, () => {
+server.listen(port, () => {
     connectDB();
     console.log(`Server is running on port ${port}`);
 })

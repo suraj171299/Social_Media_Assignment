@@ -6,15 +6,59 @@ import { Button } from "./ui/button";
 import CommentView from "./CommentView";
 import { useDispatch, useSelector } from "react-redux";
 import axios from "axios";
-import { setPosts } from "@/redux/post";
+import { setPosts, setSelectedPost } from "@/redux/post";
 
 const Post = ({ post }) => {
-	const [comments, setComments] = useState(false);
+	const [open, setOpen] = useState(false);
 	const { user } = useSelector((store) => store.auth);
 	const { posts } = useSelector((store) => store.post);
 	const [liked, setLiked] = useState(post.likes.includes(user?._id) || false);
 	const [postLike, setPostLike] = useState(post.likes.length);
+	const [text, setText] = useState("");
+	const [comment, setComment] = useState(post.comments);
 	const dispatch = useDispatch();
+
+	const EventHandler = (e) => {
+		const inputText = e.target.value;
+		// console.log(inputText);
+		if (inputText.trim()) {
+			setText(inputText);
+		} else {
+			setText("");
+		}
+	};
+
+	const commentHandler = async () => {
+		try {
+			const res = await axios.post(
+				`http://localhost:5000/app/post/${post._id}/comment`,
+				{ text },
+				{
+					headers: {
+						"Content-Type": "application/json",
+					},
+					withCredentials: true,
+				},
+			);
+			console.log(res.data);
+			if (res.data.success) {
+				const updatedCommentData = [...comment, res.data.comment];
+				setComment(updatedCommentData);
+
+				const updatedPostData = posts.map((p) =>
+					p._id === post._id
+						? { ...p, comments: updatedCommentData }
+						: p,
+				);
+
+				dispatch(setPosts(updatedPostData));
+				console.log(res.data.message);
+				setText("");
+			}
+		} catch (error) {
+			console.log(error);
+		}
+	};
 
 	const deletHandler = async () => {
 		try {
@@ -24,7 +68,7 @@ const Post = ({ post }) => {
 			);
 			if (res.data.success) {
 				const updatedPosts = posts.filter(
-					(postDeleted) => postDeleted?._id != post?._id,
+					(postDeleted) => postDeleted?._id !== post?._id,
 				);
 				dispatch(setPosts(updatedPosts));
 				console.log("Post deleted");
@@ -38,7 +82,7 @@ const Post = ({ post }) => {
 		try {
 			const action = liked ? "dislike" : "like";
 			const res = await axios.get(
-				`http://localhost:5000/app/post/${post._id}/${action}`,
+				`http://localhost:5000/app/post/${post?._id}/${action}`,
 				{ withCredentials: true },
 			);
 			console.log(res.data);
@@ -47,7 +91,6 @@ const Post = ({ post }) => {
 				setPostLike(updatedLikes);
 				setLiked(!liked);
 
-				// apne post ko update krunga
 				const updatedPostData = posts.map((p) =>
 					p._id === post._id
 						? {
@@ -65,6 +108,7 @@ const Post = ({ post }) => {
 			console.log(error);
 		}
 	};
+
 	return (
 		<div className="my-8 w-full max-w-sm mx-auto">
 			<div className="flex items-center justify-between">
@@ -107,7 +151,10 @@ const Post = ({ post }) => {
 						/>
 					)}
 					<MessageCircle
-						onClick={() => setComments(true)}
+						onClick={() => {
+							dispatch(setSelectedPost(post));
+							setOpen(true);
+						}}
 						size={"25px"}
 						className="cursor-pointer"
 					/>
@@ -123,14 +170,28 @@ const Post = ({ post }) => {
 			</p>
 			<span
 				className="cursor-pointer hover: underline"
-				onClick={() => setComments(true)}
+				onClick={() => {
+					dispatch(setSelectedPost(post));
+					setOpen(true);
+				}}
 			>
-				View all comments
+				View all {comment.length} comments
 			</span>
-			<CommentView comments={comments} setComments={setComments} />
+			<CommentView open={open} setOpen={setOpen} />
 			<div className="flex items-center justify-between">
-				<input type="text" placeholder="Add Comment..." />
-				<span>Post</span>
+				<input
+					value={text}
+					onChange={EventHandler}
+					type="text"
+					placeholder="Add Comment..."
+					className="outline-none text-sm w-full"
+				/>
+				<span
+					onClick={commentHandler}
+					className="cursor-pointer hover: underline"
+				>
+					Post
+				</span>
 			</div>
 		</div>
 	);

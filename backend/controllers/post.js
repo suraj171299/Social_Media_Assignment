@@ -141,8 +141,9 @@ export const addComment = async (req, res) => {
         const postId = req.params.id;
         const commentedUserId = req.id;
 
-        const { text } = req.body;
-
+        const { text }  = req.body;
+        console.log(text);
+        
         const post = await Post.findById(postId);
 
         if (!text) return res.json(400).json({ message: "Comment cannot be empty", success: false })
@@ -151,21 +152,25 @@ export const addComment = async (req, res) => {
             text,
             author: commentedUserId,
             post: postId
-        }).populate({
-            path: 'author',
-            select: 'username'
         })
 
-        post.comments.pus(comment._id)
+        await comment.populate({
+                path: 'author',
+                select: 'username'
+        })
+
+        post.comments.push(comment._id)
         await post.save();
 
         return res.status(201).json({
             message: "Comment added",
-            success: true
+            success: true,
+            comment,
         })
 
     } catch (error) {
-
+        console.log(error);
+        
     }
 
 }

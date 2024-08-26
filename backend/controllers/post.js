@@ -1,7 +1,7 @@
 import Post from "../models/post.js";
 import User from "../models/user.js";
 import Comment from "../models/comment.js";
-import ErrorResponse from "../utils/errorResponse.js";
+import { getReceiverSocketId, io } from "../socket/socket.js";
 
 export const createPost = async (req, res, next) => {
     try {
@@ -101,6 +101,23 @@ export const likePost = async (req, res, next) => {
         await post.updateOne({ $addToSet: { likes: likedUserId } });
         await post.save();
 
+
+        const user = await User.findById(likedUserId).select('username')
+        const postAuthorId = post.author.toString()
+        if(postAuthorId !== likedUserId){
+            const notification = {
+                type: 'like',
+                userId: likedUserId,
+                userDetails: user,
+                postId,
+                message: "Your post was liked"
+            }
+            const postAuthorSocketId = getReceiverSocketId(postAuthorId);
+            io.to(postAuthorSocketId).emit('notification', notification)
+        }
+
+
+
         return res.status(201).json({
             message: "Post liked",
             success: true
@@ -126,6 +143,22 @@ export const dislikePost = async (req, res, next) => {
 
         await post.updateOne({ $pull: { likes: likedUserId } });
         await post.save();
+
+        const user = await User.findById(likedUserId).select('username')
+        const postAuthorId = post.author.toString()
+        if(postAuthorId !== likedUserId){
+            const notification = {
+                type: 'dislike',
+                userId: likedUserId,
+                userDetails: user,
+                postId,
+                message: "Your post was liked"
+            }
+            const postAuthorSocketId = getReceiverSocketId(postAuthorId);
+            io.to(postAuthorSocketId).emit('notification', notification)
+        }
+
+
 
         return res.status(201).json({
             message: "Post disliked",
@@ -161,6 +194,12 @@ export const addComment = async (req, res) => {
 
         post.comments.push(comment._id)
         await post.save();
+
+
+        
+
+
+
 
         return res.status(201).json({
             message: "Comment added",

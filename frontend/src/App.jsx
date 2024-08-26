@@ -9,20 +9,24 @@ import { io } from "socket.io-client";
 import { useDispatch, useSelector } from "react-redux";
 import { setSocket } from "./redux/socket";
 import { setOnlineUsers } from "./redux/online";
+import { setLikeNotification } from "./redux/rtn";
+import ProtectedRoutes from "./components/ProtectedRoutes";
 
 const browserRoute = createBrowserRouter([
 	{
 		path: "/",
-		element: <Mainlayout />,
+		element: <ProtectedRoutes>
+        <Mainlayout />
+    </ProtectedRoutes>,
 		children: [
 			{
 				path: "/",
-				element: <Home />,
+				element: <ProtectedRoutes><Home /></ProtectedRoutes>,
 			},
-			{
-				path: "/profile",
-				element: <Profile />,
-			},
+			// {
+			// 	path: "/profile",
+			// 	element: <Profile />,
+			// },
 		],
 	},
 	{
@@ -54,7 +58,11 @@ function App() {
 				dispatch(setOnlineUsers(onlineUsers));
 			});
 
-			return () => {
+      socketio.on('notification', (notification) => {
+        dispatch(setLikeNotification(notification));
+      })
+			
+      return () => {
 				socketio.close();
 				dispatch(setSocket(null));
 			};

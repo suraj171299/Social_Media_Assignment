@@ -7,10 +7,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { setAuthUser } from "@/redux/auth";
 import CreatePost from "./CreatePost";
 import { setPosts, setSelectedPost } from "@/redux/post";
+import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
+import { Button } from "./ui/button";
 
 
 const Sidebar = () => {
 	const { user } = useSelector(store => store.auth )
+	const {likeNotification} = useSelector(store => store.realTimeNotification);
 	const navigate = useNavigate();
     const dispatch = useDispatch();
 	const [open, setOpen] = useState(false)
@@ -68,6 +71,34 @@ const Sidebar = () => {
 							>
 								{items.icon}
 								<span>{items.text}</span>
+								{
+									items.text === 'Notifications' && likeNotification.length > 0 && (
+										<Popover>
+											<PopoverTrigger>
+													<Button size='icon' className='rounded-full h-5 w-5 absolute bottom-6 left-6'>{likeNotification.length}</Button>
+											</PopoverTrigger>
+											<PopoverContent>
+												<div>
+													{
+														likeNotification.length === 0 ? (<p>No new notification </p>) : (
+															likeNotification.map((notification) => {
+																return (
+																	<div key={ notification.userId} className="flex items-center gap-2">
+																		<Avatar className="w-6 h-6">
+																			<AvatarImage src='' alt="@shadcn" />
+																				<AvatarFallback>DP</AvatarFallback>
+																		</Avatar>
+																		<p className="text-sm"><span className="font-bold">{notification.userDetails?.username}</span> liked your post</p>
+																	</div>
+																)
+															})
+														)
+													}
+												</div>
+											</PopoverContent>
+										</Popover>
+									)
+								}
 							</div>
 						);
 					})}

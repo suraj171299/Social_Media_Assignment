@@ -29,9 +29,9 @@ const CreatePost = ({ open, setOpen }) => {
 			);
 			if (res.data.success) {
                 console.log("Post added");
+                dispatch(setPosts([ res.data.post,...posts]))
 				setCaption(""); 
 				setOpen(false); 
-                dispatch(setPosts([, res.data.post,...posts]))
 			}
 		} catch (error) {
 			console.log("Error creating post:", error);

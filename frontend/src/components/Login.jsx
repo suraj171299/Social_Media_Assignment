@@ -1,9 +1,9 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { setAuthUser } from "@/redux/auth";
 
 
@@ -20,7 +20,7 @@ const LogIn = () => {
   const EventHandler = (event) => {
     setInput({ ...input, [event.target.name]: event.target.value });
   };
-
+  const {user} = useSelector(store=> store.auth)
   const logInHandler = async (event) => {
     event.preventDefault();
     console.log(input);
@@ -52,6 +52,12 @@ const LogIn = () => {
       setLoading(false);
     }
   };
+
+  useEffect(()=>{
+    if(user){
+      navigate('/')
+    }
+  },[])
   return (
     <div className="flex items-center w-screen h-screen justify-center">
       <form

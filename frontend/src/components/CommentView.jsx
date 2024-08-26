@@ -1,11 +1,24 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Dialog, DialogContent } from "./ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Link } from "react-router-dom";
 import { Button } from "./ui/button";
+import { useDispatch, useSelector } from "react-redux";
+import Comment from "./Comment";
+import axios from "axios";
+import { setPosts } from "@/redux/post";
 
 const CommentView = ({ open, setOpen }) => {
 	const [text, setText] = useState("");
+	const { selectedPost, posts } = useSelector((store) => store.post);
+	const [comment, setComment] = useState([]);
+	const dispatch = useDispatch();
+
+	useEffect(() => {
+		if (selectedPost) {
+		  setComment(selectedPost.comments);
+		}
+	  }, [selectedPost]);
 
 	const eventHandler = (event) => {
 		const input = event.target.value;
@@ -14,10 +27,6 @@ const CommentView = ({ open, setOpen }) => {
 		} else {
 			setText("");
 		}
-	};
-
-	const postCommentHandler = async () => {
-		alert(text);
 	};
 
 	return (
@@ -41,30 +50,15 @@ const CommentView = ({ open, setOpen }) => {
 									<AvatarFallback>DP</AvatarFallback>
 								</Avatar>
 								<Link className="font-bold text-xs">
-									Username
+									{selectedPost?.author?.username}
 								</Link>
 							</div>
 						</div>
 						<hr />
 						<div className="flex-1 overflow-y-auto max-h-96 p-4">
-							comments
-						</div>
-						<div className="p-4">
-							<div className="flex item-center gap-2">
-								<input
-									onChange={eventHandler}
-									value={text}
-									type="text"
-									placeholder="Add Comment"
-									className="w-full outline-none border text-sm border-gray-300 p-2 rounded"
-								/>
-								<Button
-									onClick={postCommentHandler}
-									variant="outline"
-								>
-									Add
-								</Button>
-							</div>
+							{comment.map((comment) => (
+								<Comment key={comment._id} comment={comment} />
+							))}
 						</div>
 					</div>
 				</div>
